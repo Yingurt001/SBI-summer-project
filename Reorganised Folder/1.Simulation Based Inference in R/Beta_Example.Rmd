@@ -1,0 +1,153 @@
+---
+title: "Beta_Example"
+author: "Ying Zhang"
+date: "2025-06-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Today's task
+- We look into the example of beta prior distribution Beta($\alpha, \beta$) and Binomial model M ~ $p(y|\theta)$.
+- We first collect $\theta$ from the our prior distribution and then we generate our data based on our model M
+- Then for each y that we generate it, we find all the $\theta$ corresponding to different y.
+- Calculate its expectation $E(\theta|y)$ and variance $Var(\theta|y)$
+- Use Gausssian distribution to describe the posterior distribution of $p(\theta|y)$
+
+### Compare the true posterior distribution with our approximated distribution
+First we select $\theta$ from the prir beta($\alpha, \beta$) with $\alpha = 3$ and $\beta = 3$, and we assume that we observe y = 80 and N = 100. In this case , we can draw the true posterior directly with its posterior distribution to be 
+
+$\theta|y$ ~ $Beta(\alpha',\beta')$  with $\alpha' = \alpha +y$ and $\beta' = \beta +n -y$
+ 
+```{r collect_prior, echo=FALSE}
+y <- 80
+N <- 100
+alpha <- 3
+beta <- 3
+
+plot(seq(0,1,len=100), dbeta(seq(0,1,len=100), y+alpha, N-y+beta), 
+     type='l', ylab="pi(theta|y)", xlab="theta", 
+     main="Posterior Density pi(theta|y)")
+```
+
+Then we generate the corresponding y based on each collection of $\theta$, in total we generate M pairs of $(\theta_j,y_j$, here we use M = 10^6.
+
+Then for each y, we find all the $\theta$ corresponding to different y and calculate its mean, variance and standard deviation.
+
+```{r approximated_posterior , echo=FALSE}
+
+# number of pairs (theta, y)
+M <- 10^6
+
+# create vectors to store the pairs
+theta.vec <- rep(NA, M)
+y.vec <- rep(NA, M)
+
+for (i in 1:M) {
+  
+  # draw theta from the prior
+  theta.vec[i] <- rbeta(1, alpha, beta)
+  
+  # simulate data (i.e. success) from the model 
+  # using the value of theta drawn above
+  y.vec[i] <- rbinom(1, size = N, prob = theta.vec[i])
+  
+}
+
+# put them into a matrix
+out.mat <- cbind(theta.vec, y.vec)
+
+# create a list to store the samples theta values corresponding to different values of y
+theta.list <- vector('list', length = N+1)
+
+for (i in 0:N) {
+  
+  # find the indices for which y = 0, y=1, ... 
+  
+  sel.index <- which(out.mat[,2]==i)
+  
+  # put the corresponding theta values into the list's element. 
+  theta.list[[i+1]] <- out.mat[sel.index, 1]
+  
+}
+
+# extract posterior mean, variance and st dev for each posterior of theta | y 
+post.mean.theta.vec <- sapply(theta.list, mean)
+post.var.theta.vec <- sapply(theta.list, var)
+post.sd.theta.vec <- sapply(theta.list, sd)
+```
+
+After doing that, we plot the Normal distribution using post.mean and post.var for index i = 2.
+
+
+```{r plot the posterior, echo=FALSE}
+
+i = 2
+
+# Plot the density f(x) = dnorm(x; mu, sigma) from x = mu−4σ to mu+4σ
+curve(
+  dnorm(x, mean = post.mean.theta.vec[i], sd = post.sd.theta.vec[i]),
+  from = post.mean.theta.vec[i] - 4*post.sd.theta.vec[i],
+  to   = post.mean.theta.vec[i] + 4*post.sd.theta.vec[i],
+  xlab = "x",
+  ylab = "Density",
+  main = sprintf("Normal(μ=%.1f, σ=%.1f) Density",  post.mean.theta.vec[i],  post.sd.theta.vec[i])
+)
+
+curve(
+  dbeta(x, shape1 = i+alpha, shape2 = N-i+beta),
+  from = 0, to = 1,
+  add = TRUE,
+  lty = 2,       # dashed line
+  lwd = 2,
+  col = "red"
+)
+
+```
+
+
+### Find relationship between mean and data y, variance and data y
+We First plot mean vs y and we notice that it is linear. We can estimate it with simple linear regression model.
+```{r plot the mean vs y , echo=FALSE}
+
+v <- 0:100
+
+model <- lm(post.mean.theta.vec ~ v)
+plot(post.mean.theta.vec ~ v)
+model
+abline(model, col = 'red', lwd = 2)
+summary(model)
+
+```
+The figure shows that our linear model fits well.
+
+Then we plot the variance vs y , it shows that there exists quadratic pattern between variance and y , so we try the linear model with lm(post.var.theta.vec ~ v+ I(v^2)), and it fits well as shown below.
+```{r plot the variance vs y, echo = FALSE}
+
+
+modelv <- lm(post.var.theta.vec ~ v+ I(v^2))
+summary(modelv)
+
+plot(
+  v, post.var.theta.vec,
+  pch  = 16,
+  col  = "blue",
+  xlab = "v",
+  ylab = "post.var.theta.vec",
+  main = "Quadratic fit to post.var.theta.vec"
+)
+
+# 3) Add the fitted curve
+#    - predict() returns the model's ŷ for each v
+yhat <- predict(modelv, newdata = data.frame(v = v))
+
+#    - since v is already sorted 0:100, lines() will draw a smooth curve
+lines(
+  v, yhat,
+  col = "red",
+  lwd = 2
+)
+
+```

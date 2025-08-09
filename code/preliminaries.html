@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.433">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Theo Kypraios">
+
+<title>Simulation-Based-Inference</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="preliminaries_files/libs/clipboard/clipboard.min.js"></script>
+<script src="preliminaries_files/libs/quarto-html/quarto.js"></script>
+<script src="preliminaries_files/libs/quarto-html/popper.min.js"></script>
+<script src="preliminaries_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="preliminaries_files/libs/quarto-html/anchor.min.js"></script>
+<link href="preliminaries_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="preliminaries_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="preliminaries_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="preliminaries_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="preliminaries_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Simulation-Based-Inference</h1>
+<p class="subtitle lead">Summer Research Internship Project 2025</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Theo Kypraios </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="about-the-project" class="level2">
+<h2 class="anchored" data-anchor-id="about-the-project">About the project</h2>
+<p>This is a document which outlines the main idea behind the summer project on Simulation-Based-Inference (SBI) (mostly Neural Posterior Estimation).</p>
+<p>Throughout this project we will be concerned with the following scenario: we have observed some data <span class="math inline">\(y\)</span> which we assume they have come from some model <span class="math inline">\(M\)</span> which is parameterised by (parameters) <span class="math inline">\(\theta\)</span>. Note that <span class="math inline">\(\theta\)</span> can be more than one parameters and <span class="math inline">\(y\)</span> can be high-dimensional.</p>
+<p>We wish to make Bayesian inference for <span class="math inline">\(\theta\)</span> and therefore we assign a prior distribution <span class="math inline">\(\pi(\theta)\)</span> which when combined with the likelihood function <span class="math inline">\(\pi(y|\theta)\)</span> gives rise to the posterior distribution of <span class="math inline">\(\theta\)</span>: <span class="math display">\[ \pi(\theta|y) = \frac{\pi(y|\theta) \pi(\theta)}{\int_{\theta} \pi(y|\theta) \pi(\theta)\mbox{ d}\theta} \propto \pi(y|\theta) \pi(\theta)\]</span> where <span class="math inline">\(\pi(y) = \int_{\theta} \pi(y|\theta)\pi(\theta)\mbox{ d}\theta\)</span> is a normalising constant.</p>
+<p>This summer research project is concerned with investigating the use of recently developed methodology based on neural networks and deep learning for performing Bayesian inference.</p>
+<section id="what-is-the-goal" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-the-goal">What is the goal?</h3>
+<p>In loose terms <span class="math inline">\(\pi(\theta|y)\)</span> denotes the probability density/mass function of the posterior distribution of <span class="math inline">\(\theta\)</span> given that data <span class="math inline">\(y\)</span> which we denote by <span class="math inline">\([y|\theta]\)</span>. Our goal/target is to <strong>access the posterior distribution</strong> <span class="math inline">\([\theta|y]\)</span>; having acess to <span class="math inline">\([\theta|y]\)</span> can can mean several things but ideally this means one of these two:</p>
+<ol type="1">
+<li><p>derive analytically (i.e.&nbsp;by hand) the expression for the density <span class="math inline">\(\pi(\theta|y)\)</span>;</p></li>
+<li><p>able to sample from <span class="math inline">\([y|\theta]\)</span> when only knowing <span class="math inline">\(\pi(\theta|y)\)</span> up to proportionality, i.e <span class="math inline">\(\pi(\theta|y) \propto \pi(y|\theta) \pi(\theta).\)</span></p></li>
+</ol>
+<p>In the case where the likelihood function <span class="math inline">\(\pi(y|\theta)\)</span> then [1.] above is do-able for certain text-book cases/problems in which one does not have to calculate the normalising constant <span class="math inline">\(\pi(y)\)</span> (see conjugate priors). If [1.] is not possible, i.e.&nbsp;calculating <span class="math inline">\(\pi(y)\)</span> is difficult because it is, say, a difficult/high-dimensional integral,then there are computational statistics algorithms which enable sampling from the posterior distribution <span class="math inline">\([y|\theta]\)</span> by only having access to <span class="math inline">\(\pi(y|\theta)\)</span>.</p>
+<p>Note that being able to sample from <span class="math inline">\([y|\theta]\)</span>, i.e.&nbsp;[2.] above, does not mean that we can write down what the pdf/pmf <span class="math inline">\(\pi(\theta|y)\)</span> is or evaluate <span class="math inline">\(\pi(\theta|y)\)</span> for a given value of <span class="math inline">\(\theta\)</span>. However, if have lots of samples from <span class="math inline">\([\theta|y]\)</span> then we <em>estimate/approximate</em> <span class="math inline">\(\pi(\theta|y)\)</span> e.g.&nbsp;by plotting a histogram of the drawn <span class="math inline">\(\theta\)</span> samples from <span class="math inline">\([\theta|y]\)</span>.</p>
+</section>
+<section id="what-if-we-dont-have-access-to-piytheta" class="level3">
+<h3 class="anchored" data-anchor-id="what-if-we-dont-have-access-to-piytheta">What if we don’t have access to <span class="math inline">\(\pi(y|\theta)\)</span>?</h3>
+<p>To implement either [1.] or [2.] above we need to know how to write down and compute the likelihood <span class="math inline">\(\pi(y|\theta)\)</span> for any <span class="math inline">\(\theta\)</span>. If we can’t do this (for whatever reason) then we are in trouble, meaning that we need some other method/approach/algorithm which will give us access to the posterior distribution <span class="math inline">\(\pi(\theta|y)\)</span> without knowing <span class="math inline">\(\pi(y|\theta)\)</span>.</p>
+</section>
+<section id="the-idea-behind-sbi" class="level3">
+<h3 class="anchored" data-anchor-id="the-idea-behind-sbi">The idea behind SBI</h3>
+<p>This is where SBI comes to rescue, well, at least in principle! SBI is an umbrella term which includes computational algorithms whose aim is to <strong>approximate</strong> the posterior density <span class="math inline">\(\pi(\theta|y)\)</span> <strong>requiring only being able to sample (or generate) data from the model</strong> <span class="math inline">\(M\)</span> which we wish to fit to data.</p>
+<p>In other words, these algorithms bypass the need to be able to compute the likelihood function <span class="math inline">\(\pi(y|\theta)\)</span> for any <span class="math inline">\(\theta\)</span>. To take this one step further, SBI methods learn how to approximate the posterior distribution <span class="math inline">\([\theta|y]\)</span> for <strong>any value of <span class="math inline">\(y\)</span></strong>.</p>
+</section>
+<section id="a-binomial-experiment-toy-example" class="level3">
+<h3 class="anchored" data-anchor-id="a-binomial-experiment-toy-example">A Binomial experiment: toy example</h3>
+<p>We will demonstrate the core idea behind this project with the following illustrative example.</p>
+<p>Suppose that we have <span class="math inline">\(M\)</span> to denote a Binomial distribution model in which we are modelling the number of successes, <span class="math inline">\(Y\)</span>, in a number of trials where the probability of success is denoted by <span class="math inline">\(\theta\)</span> and is the parameter of interest, and the number of trials is denoted by <span class="math inline">\(N\)</span>, i.e.&nbsp;<span class="math display">\[Y \sim \mbox{Binom}(N,\theta).\]</span></p>
+<p><strong>Likelihood</strong>: Suppose that we observe <span class="math inline">\(y\)</span> success; the likelihood function is just the binomial pmf: <span class="math display">\[\pi(y|\theta) = P(Y=y|\theta) = {N \choose \theta} \,\theta^{y}\, (1-\theta)^{N-y}.\]</span></p>
+<p><strong>Prior</strong>: We assign a <span class="math inline">\(\mbox{Beta}(\alpha, \beta)\)</span> prior distribution to <span class="math inline">\(\theta\)</span>, i.e.&nbsp;<span class="math display">\[\pi(\theta) = \frac{1}{B(\alpha, \beta)}\theta^{\alpha-1}\,(1-\theta)^{\beta-1}, \qquad \alpha &gt; 0, \quad  \beta &gt;0, \quad \theta\in[0,1].\]</span></p>
+<p><strong>Posterior:</strong> Straightforward application of Bayes theorem give us: <span class="math display">\[\begin{eqnarray*}
+\pi(\theta|y) &amp; \propto &amp; \theta^{y}\, (1-\theta)^{N-y}\, \theta^{\alpha-1}\,(1-\theta)^{\beta-1} \\
+&amp; \propto &amp;  \theta^{\alpha + y - 1}\,(1-\theta)^{N - y + \beta-1} \\ \\
+[\theta|y] &amp; \equiv &amp; \mbox{Beta}(y+\alpha, N - y + \beta)
+\end{eqnarray*}\]</span></p>
+<p>In other words, we have used a <em>conjugate prior</em> distribution for <span class="math inline">\(\theta\)</span> which leads to a Beta distribution as the posterior distribution. In this toy example, Bayesian inference is straightforward both due to the likelihood being tractable/known and also because of the conjucacy. That means we do not need any fancy methods to make inference for <span class="math inline">\(\theta\)</span>.</p>
+<p>All we have to do now is to plug in the observed data <span class="math inline">\(y\)</span> and the values we have chosen for the prior distribution <span class="math inline">\((\alpha, \beta)\)</span> and we have finished. For example, if we had observed 80 success out of 100 trials and we had assigned a uniform prior distribution to <span class="math inline">\(\theta\)</span> then: <span class="math display">\[y|\theta \sim \mbox{Beta}(81, 21).\]</span></p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="dv">80</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> beta <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">1</span>,<span class="at">len=</span><span class="dv">100</span>), <span class="fu">dbeta</span>(<span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">1</span>,<span class="at">len=</span><span class="dv">100</span>), y<span class="sc">+</span>alpha, N<span class="sc">-</span>y<span class="sc">+</span>beta), </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>     <span class="at">type=</span><span class="st">'l'</span>, <span class="at">ylab=</span><span class="st">"pi(theta|y)"</span>, <span class="at">xlab=</span><span class="st">"theta"</span>, </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>     <span class="at">main=</span><span class="st">"Posterior Density pi(theta|y)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="preliminaries_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>What if the likelihood <span class="math inline">\(\pi(y|\theta)\)</span> was intractable? In other words, imagine/pretend that we didn’t know that <span class="math inline">\(\pi(y|\theta)\)</span> is the probability mass function of the Binomial distribution and therefore assume that we don’t have access to <span class="math inline">\(\pi(y|\theta)\)</span>. What else can we do?</p>
+<p>Let us now see how one can approach the problem differently using simulation-based-infence (SBI):</p>
+<p>One thing we (assume we) can do is to repeatedly sample <span class="math inline">\(\theta\)</span> from the prior distribution <span class="math inline">\(\pi(\theta)\)</span> and then sample/generate (synthetic) data from <span class="math inline">\(M\)</span> (i.e.&nbsp;Binomial distribution).</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># number of pairs (theta, y)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="dv">10</span><span class="sc">^</span><span class="dv">4</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># create vectors to store the pairs</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>theta.vec <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA</span>, M)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>y.vec <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA</span>, M)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>M) {</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># draw theta from the prior</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  theta.vec[i] <span class="ot">&lt;-</span> <span class="fu">rbeta</span>(<span class="dv">1</span>, alpha, beta)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># simulate data (i.e. success) from the model </span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># using the value of theta drawn above</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  y.vec[i] <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(<span class="dv">1</span>, <span class="at">size =</span> N, <span class="at">prob =</span> theta.vec[i])</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>We draw a scatter plot of these pairs <span class="math inline">\((\theta,y)\)</span>:</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(theta.vec, y.vec, <span class="at">cex=</span><span class="fl">0.8</span> ,<span class="at">xlab =</span> <span class="st">"theta"</span>, <span class="at">ylab=</span><span class="st">"y"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="preliminaries_files/figure-html/scatterplot-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Posterior Density for the Success Probability in a Binomial Experiment</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>What we would like to be able to do now is to use these samples of <span class="math inline">\((\theta, y)\)</span> pairs to construct (somehow) an estimate/or of the probability density function <span class="math inline">\(\pi(\theta|y)\)</span> <strong>for any <span class="math inline">\(y\)</span></strong> but for a fixed <span class="math inline">\(N\)</span>.</p>
+<p>In a nutshell that is what this project is about – learn how to do this starting from simple examples like this one to more complicated ones.</p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

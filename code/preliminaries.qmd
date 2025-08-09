@@ -1,0 +1,118 @@
+---
+title: "Simulation-Based-Inference"
+subtitle: "Summer Research Internship Project 2025"
+author: "Theo Kypraios"
+format:
+  html:
+    code-fold: true
+    code-wrap: true
+editor: visual
+---
+
+## About the project
+
+This is a document which outlines the main idea behind the summer project on Simulation-Based-Inference (SBI) (mostly Neural Posterior Estimation).
+
+Throughout this project we will be concerned with the following scenario:  we have observed some data $y$ which we assume they have come from some model $M$ which is parameterised by (parameters) $\theta$. Note that $\theta$ can be more than one parameters and $y$ can be high-dimensional.
+
+We wish to make Bayesian inference for $\theta$ and therefore we assign a prior distribution $\pi(\theta)$ which when combined with the likelihood function $\pi(y|\theta)$ gives rise to the posterior distribution of $\theta$: $$ \pi(\theta|y) = \frac{\pi(y|\theta) \pi(\theta)}{\int_{\theta} \pi(y|\theta) \pi(\theta)\mbox{ d}\theta} \propto \pi(y|\theta) \pi(\theta)$$ where $\pi(y) = \int_{\theta} \pi(y|\theta)\pi(\theta)\mbox{ d}\theta$  is a normalising constant.
+
+This summer research project is concerned with investigating the use of recently developed methodology based on neural networks and deep learning for performing Bayesian inference.
+
+###  What is the goal?
+
+In loose terms $\pi(\theta|y)$ denotes the probability density/mass function of the posterior distribution of $\theta$ given that data $y$ which we denote by $[y|\theta]$. Our goal/target is to **access the posterior distribution**  $[\theta|y]$; having acess to $[\theta|y]$ can can mean several things but ideally this means one of these two:
+
+1. derive analytically (i.e. by hand) the expression for the density $\pi(\theta|y)$;
+
+2. able to sample from $[y|\theta]$ when only knowing $\pi(\theta|y)$ up to proportionality, i.e $\pi(\theta|y) \propto \pi(y|\theta) \pi(\theta).$ 
+
+In the case where the likelihood function $\pi(y|\theta)$ then [1.] above is do-able for certain text-book cases/problems in which one does not have to calculate the normalising constant $\pi(y)$ (see conjugate priors). If [1.] is not possible, i.e. calculating $\pi(y)$ is difficult because it is, say, a difficult/high-dimensional integral,then there are computational statistics algorithms which enable sampling from the posterior distribution $[y|\theta]$ by only having access to $\pi(y|\theta)$. 
+
+Note that being able to sample from $[y|\theta]$, i.e. [2.] above, does not mean that we can write down what the pdf/pmf $\pi(\theta|y)$ is or evaluate $\pi(\theta|y)$ for a given value of $\theta$. However, if have lots of samples from $[\theta|y]$ then we *estimate/approximate* $\pi(\theta|y)$ e.g. by plotting a histogram of the drawn $\theta$ samples from $[\theta|y]$.
+
+
+### What if we don't have access to $\pi(y|\theta)$?
+
+To implement either [1.] or [2.] above we need to know how to write down and compute the likelihood $\pi(y|\theta)$ for any $\theta$. If we can't do this (for whatever reason) then we are in trouble, meaning that we need some other method/approach/algorithm which will give us access to the posterior distribution $\pi(\theta|y)$ without knowing $\pi(y|\theta)$. 
+
+### The idea behind SBI
+
+This is where SBI comes to rescue, well, at least in principle! SBI is an umbrella term which includes computational algorithms whose aim is to **approximate** the posterior density $\pi(\theta|y)$ **requiring only being able to sample (or generate) data from the model** $M$ which we wish to fit to data. 
+
+In other words, these algorithms bypass the need to be able to compute the likelihood function $\pi(y|\theta)$ for any $\theta$. To take this one step further, SBI methods learn how to approximate the posterior distribution $[\theta|y]$ for **any value of $y$**. 
+
+### A Binomial experiment: toy example
+
+We will demonstrate the core idea behind this project with the following illustrative example.
+
+Suppose that we have $M$ to denote a Binomial distribution model in which we are modelling the number of successes, $Y$, in a number of trials where the probability of success is denoted by $\theta$ and is the parameter of interest, and the number of trials is denoted by $N$, i.e. $$Y \sim \mbox{Binom}(N,\theta).$$
+
+**Likelihood**: Suppose that we observe $y$ success; the likelihood function is just the binomial pmf: $$\pi(y|\theta) = P(Y=y|\theta) = {N \choose \theta} \,\theta^{y}\, (1-\theta)^{N-y}.$$
+
+**Prior**: We assign a $\mbox{Beta}(\alpha, \beta)$ prior distribution to $\theta$, i.e. $$\pi(\theta) = \frac{1}{B(\alpha, \beta)}\theta^{\alpha-1}\,(1-\theta)^{\beta-1}, \qquad \alpha > 0, \quad  \beta >0, \quad \theta\in[0,1].$$
+
+**Posterior:** Straightforward application of Bayes theorem give us: 
+\begin{eqnarray*}
+\pi(\theta|y) & \propto & \theta^{y}\, (1-\theta)^{N-y}\, \theta^{\alpha-1}\,(1-\theta)^{\beta-1} \\
+& \propto &  \theta^{\alpha + y - 1}\,(1-\theta)^{N - y + \beta-1} \\ \\
+[\theta|y] & \equiv & \mbox{Beta}(y+\alpha, N - y + \beta)
+\end{eqnarray*}
+
+In other words, we have used a *conjugate prior* distribution for $\theta$ which leads to a Beta distribution as the posterior distribution. In this toy example, Bayesian inference is straightforward both due to the likelihood being tractable/known and also because of the conjucacy. That means we do not need any fancy methods to make inference for $\theta$. 
+
+All we have to do now is to plug in the observed data $y$ and the values we have chosen for the prior distribution $(\alpha, \beta)$ and we have finished. For example, if we had observed 80 success out of 100 trials and we had assigned a uniform prior distribution to $\theta$ then: $$y|\theta \sim \mbox{Beta}(81, 21).$$
+
+```{r}
+y <- 80
+N <- 100
+alpha <- beta <- 1
+
+plot(seq(0,1,len=100), dbeta(seq(0,1,len=100), y+alpha, N-y+beta), 
+     type='l', ylab="pi(theta|y)", xlab="theta", 
+     main="Posterior Density pi(theta|y)")
+```
+
+What if the likelihood $\pi(y|\theta)$ was intractable? In other words, imagine/pretend  that we didn't know that $\pi(y|\theta)$ is the probability mass function of the Binomial distribution and therefore assume that we don't have access to $\pi(y|\theta)$. What else can we do?
+
+
+Let us now see how one can approach the problem differently using simulation-based-infence (SBI):
+
+
+One thing we (assume we) can do is to repeatedly sample $\theta$ from the prior distribution $\pi(\theta)$ and then sample/generate (synthetic) data from $M$ (i.e. Binomial distribution).
+
+```{r}
+# number of pairs (theta, y)
+M <- 10^4
+
+# create vectors to store the pairs
+theta.vec <- rep(NA, M)
+y.vec <- rep(NA, M)
+
+for (i in 1:M) {
+  
+  # draw theta from the prior
+  theta.vec[i] <- rbeta(1, alpha, beta)
+  
+  # simulate data (i.e. success) from the model 
+  # using the value of theta drawn above
+  y.vec[i] <- rbinom(1, size = N, prob = theta.vec[i])
+  
+}
+
+```
+
+We draw a scatter plot of these pairs $(\theta,y)$:
+```{r}
+#| label: scatterplot
+#| fig-cap: "Posterior Density for the Success Probability in a Binomial Experiment"
+plot(theta.vec, y.vec, cex=0.8 ,xlab = "theta", ylab="y")
+```
+
+
+What we would like to be able to do now is to use these samples of $(\theta, y)$ pairs to construct (somehow) an estimate/or of the probability density function $\pi(\theta|y)$ **for any $y$** but for a fixed $N$.
+
+In a nutshell that is what this project is about -- learn how to do this starting from simple examples like this one to more complicated ones.
+
+
+
