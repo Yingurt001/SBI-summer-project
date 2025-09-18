@@ -1,6 +1,6 @@
 # SBI
 
-![Poster Draft](drafts/Draft_2.png)
+![Poster Draft](drafts/Draft_3.png)
 
 This is a repository to document the work done under the general umbrella of Sample Based Inference (SB) including  Neural Posterior Estimation (NPE), amortised inference which will be undertaken during the 2025 summer research internship research programme. 
 
